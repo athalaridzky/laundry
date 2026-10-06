@@ -1,0 +1,25 @@
+name: build-and-test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.425
+      - name: Restore tools
+        run: dotnet tool restore
+      - name: Restore
+        run: dotnet restore RefalinaLaundry.sln
+      - name: Format
+        run: dotnet format RefalinaLaundry.sln --verify-no-changes --no-restore
+      - name: Build
+        run: dotnet build RefalinaLaundry.sln --configuration Release --no-restore
+      - name: Test
+        run: dotnet test RefalinaLaundry.sln --configuration Release --no-build --logger "trx;LogFileName=tests.trx"

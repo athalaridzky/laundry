@@ -1,0 +1,5 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Terjadi kesalahan";
+}
+<div class="message-page"><p class="error-code">500</p><h1>Terjadi kesalahan</h1><p>Permintaan belum dapat diproses. Coba kembali atau hubungi pengelola aplikasi.</p>@if (Model.ShowRequestId) { <small>Kode pelacakan: <code>@Model.RequestId</code></small> }<a class="btn btn-primary" asp-controller="Home" asp-action="Index">Kembali ke ringkasan</a></div>

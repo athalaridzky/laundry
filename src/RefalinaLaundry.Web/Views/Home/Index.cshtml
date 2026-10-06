@@ -1,0 +1,49 @@
+﻿@model DashboardDto
+@{
+    ViewData["Title"] = "Ringkasan";
+}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Operasional hari ini</p>
+        <h1>Ringkasan</h1>
+    </div>
+    <a class="btn btn-primary" asp-controller="Orders" asp-action="Create">Buat transaksi</a>
+</header>
+<section class="metrics-strip" aria-label="Ringkasan angka">
+    <div><span>Pesanan hari ini</span><strong>@Model.OrdersToday</strong></div>
+    <div><span>Belum lunas</span><strong>@Model.UnpaidOrders</strong></div>
+    <div><span>Siap diambil</span><strong>@Model.ReadyForPickup</strong></div>
+    <div class="@(Model.OverdueOrders > 0 ? "metric-alert" : null)"><span>Terlambat</span><strong>@Model.OverdueOrders</strong></div>
+    <div><span>Pembayaran masuk</span><strong>@UiFormat.Currency(Model.RevenueToday)</strong></div>
+</section>
+<section class="content-section">
+    <div class="section-heading">
+        <div><h2>Pesanan terbaru</h2><p>Perubahan terakhir yang perlu dipantau.</p></div>
+        <a asp-controller="Orders" asp-action="Index">Lihat semua</a>
+    </div>
+    @if (Model.RecentOrders.Count == 0)
+    {
+        <div class="empty-state"><h3>Belum ada transaksi</h3><p>Buat transaksi pertama untuk mulai mencatat pesanan.</p><a class="btn btn-primary" asp-controller="Orders" asp-action="Create">Transaksi baru</a></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>No. nota</th><th>Pelanggan</th><th>Diterima</th><th>Status</th><th>Pembayaran</th><th class="text-end">Total</th></tr></thead>
+                <tbody>
+                @foreach (OrderListItemDto order in Model.RecentOrders)
+                {
+                    <tr class="@(order.IsOverdue ? "row-overdue" : null)">
+                        <td><a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="order-number">@order.OrderNumber</a>@if (order.IsOverdue) { <small class="overdue-label">Terlambat</small> }</td>
+                        <td>@order.CustomerName</td>
+                        <td>@BusinessTime.ToLocal(order.ReceivedAtUtc).ToString("dd MMM, HH.mm")</td>
+                        <td><span class="status @UiFormat.StatusCss(order.Status)">@UiFormat.OrderStatusLabel(order.Status)</span></td>
+                        <td><span class="status @UiFormat.PaymentCss(order.PaymentStatus)">@UiFormat.PaymentStatusLabel(order.PaymentStatus)</span></td>
+                        <td class="money text-end">@UiFormat.Currency(order.TotalAmount)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

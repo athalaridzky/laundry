@@ -1,0 +1,60 @@
+@model CreateOrderPageViewModel
+@inject Microsoft.AspNetCore.Mvc.Rendering.IJsonHelper Json
+@{
+    ViewData["Title"] = "Transaksi baru";
+}
+<header class="page-header compact-header"><div><p class="eyebrow">Kasir</p><h1>Transaksi baru</h1><p>Pilih pelanggan, tambahkan layanan, lalu simpan dan cetak.</p></div><span class="shortcut-hint">Ctrl + Enter untuk simpan</span></header>
+<div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+<form asp-action="Create" method="post" id="order-form" data-order-form class="order-workspace">
+    <section class="order-entry">
+        <div class="form-section">
+            <div class="section-heading"><div><span class="step-number">1</span><h2>Pelanggan</h2></div><button class="btn btn-sm btn-secondary" type="button" data-open-quick-customer>Tambah cepat</button></div>
+            <div class="customer-picker">
+                <label for="customer-search">Cari nama atau nomor HP</label>
+                <input asp-for="Form.CustomerId" type="hidden" data-customer-id />
+                <input asp-for="Form.CustomerDisplay" id="customer-search" data-customer-search autocomplete="off" placeholder="Ketik minimal 2 karakter" aria-autocomplete="list" aria-controls="customer-results" />
+                <div id="customer-results" class="autocomplete-results" data-customer-results role="listbox" hidden></div>
+                <span asp-validation-for="Form.CustomerId"></span>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="section-heading"><div><span class="step-number">2</span><h2>Layanan</h2></div><button class="btn btn-sm btn-secondary" type="button" data-add-order-item>Tambah baris</button></div>
+            <div class="order-items-wrap">
+                <table class="order-items-table">
+                    <thead><tr><th>Layanan</th><th class="qty-col">Berat / jumlah</th><th class="price-col">Harga</th><th class="subtotal-col">Subtotal</th><th><span class="visually-hidden">Hapus</span></th></tr></thead>
+                    <tbody data-order-items></tbody>
+                </table>
+            </div>
+            <div class="field"><label asp-for="Form.Notes">Catatan pesanan <span>opsional</span></label><textarea asp-for="Form.Notes" rows="2" placeholder="Contoh: pisahkan pakaian putih"></textarea><span asp-validation-for="Form.Notes"></span></div>
+        </div>
+    </section>
+    <aside class="order-summary">
+        <p class="eyebrow">Ringkasan</p>
+        <div class="summary-total"><span>Total</span><strong data-order-total>Rp 0</strong></div>
+        <dl class="summary-meta"><div><dt>Estimasi selesai</dt><dd data-order-estimate>—</dd></div><div><dt>Jumlah layanan</dt><dd data-item-count>0</dd></div></dl>
+        <hr />
+        <h2>Pembayaran awal</h2>
+        <p class="field-help">Kosongkan jumlah untuk bayar nanti.</p>
+        <div class="field"><label asp-for="Form.PaymentAmount">Jumlah dibayar</label><div class="input-prefix"><span>Rp</span><input asp-for="Form.PaymentAmount" inputmode="decimal" data-payment-amount /></div><span asp-validation-for="Form.PaymentAmount"></span></div>
+        <div class="field"><label asp-for="Form.PaymentMethod">Metode</label><select asp-for="Form.PaymentMethod" data-payment-method><option value="Cash">Tunai</option><option value="Transfer">Transfer</option><option value="Qris">QRIS</option></select></div>
+        <div class="field" data-cash-field><label asp-for="Form.CashTendered">Uang diterima</label><div class="input-prefix"><span>Rp</span><input asp-for="Form.CashTendered" inputmode="decimal" data-cash-tendered /></div></div>
+        <div class="field" data-reference-field hidden><label asp-for="Form.PaymentReference">Referensi</label><input asp-for="Form.PaymentReference" placeholder="Nomor referensi (opsional)" /></div>
+        <div class="change-row"><span>Kembalian</span><strong data-change>Rp 0</strong></div>
+        <button class="btn btn-primary btn-lg w-100" type="submit" data-submit-order>Simpan & cetak</button>
+        <a class="btn btn-link-quiet w-100" asp-action="Index">Batal</a>
+    </aside>
+</form>
+<dialog class="quick-dialog" data-quick-dialog>
+    <form method="dialog" class="dialog-header"><div><p class="eyebrow">Pelanggan baru</p><h2>Tambah cepat</h2></div><button type="submit" class="icon-button" aria-label="Tutup">×</button></form>
+    <form action="/Customers" method="post" data-quick-customer class="stack-form">
+        @Html.AntiForgeryToken()
+        <div class="inline-message error" data-quick-error></div>
+        <div class="field"><label for="quick-name">Nama</label><input id="quick-name" name="Name" required maxlength="150" autofocus /></div>
+        <div class="field"><label for="quick-phone">Nomor HP</label><input id="quick-phone" name="PhoneNumber" maxlength="20" inputmode="tel" /></div>
+        <div class="field"><label for="quick-address">Alamat</label><textarea id="quick-address" name="Address" maxlength="300" rows="2"></textarea></div>
+        <button class="btn btn-primary" type="submit">Simpan pelanggan</button>
+    </form>
+</dialog>
+<script type="application/json" id="services-data">@Html.Raw(Json.Serialize(Model.Services))</script>
+<script type="application/json" id="order-items-data">@Html.Raw(Json.Serialize(Model.Form.Items))</script>
+@section Scripts { <partial name="_ValidationScriptsPartial" /><script src="~/js/order-create.js" asp-append-version="true"></script> }

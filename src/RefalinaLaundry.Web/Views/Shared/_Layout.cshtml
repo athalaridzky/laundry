@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#155e63" />
+    <title>@ViewData["Title"] · Refalina Laundry</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="@(User.Identity?.IsAuthenticated == true ? "app-body" : "auth-body")">
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="app-shell">
+        <header class="topbar">
+            <a class="brand" asp-controller="Home" asp-action="Index" aria-label="Refalina Laundry, beranda">
+                <span class="brand-mark" aria-hidden="true">RL</span>
+                <span><strong>Refalina</strong><small>Laundry</small></span>
+            </a>
+            <button class="nav-toggle" type="button" data-nav-toggle aria-label="Buka navigasi" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="topbar-user">
+                <span>@User.Identity.Name</span>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button class="btn-link-quiet" type="submit">Keluar</button>
+                </form>
+            </div>
+        </header>
+        <aside class="sidebar" data-sidebar>
+            <nav aria-label="Navigasi utama">
+                <a asp-controller="Orders" asp-action="Create" class="nav-primary">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    Transaksi baru
+                </a>
+                <a asp-controller="Home" asp-action="Index">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z" /></svg>
+                    Ringkasan
+                </a>
+                <a asp-controller="Orders" asp-action="Index">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 5h6M9 12h6" /></svg>
+                    Pesanan
+                </a>
+                <a asp-controller="Customers" asp-action="Index">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                    Pelanggan
+                </a>
+                @if (User.IsInRole(RoleNames.Owner))
+                {
+                    <div class="nav-section">Pemilik</div>
+                    <a asp-controller="Services" asp-action="Index">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7M2 13h20l-2 7H4l-2-7Zm7-5h6" /></svg>
+                        Layanan & harga
+                    </a>
+                    <a asp-controller="Reports" asp-action="Index">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3" /></svg>
+                        Rekap
+                    </a>
+                    <a asp-controller="Settings" asp-action="Index">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.14.37.35.7.6 1 .29.33.68.53 1.1.6h.1v4h-.1a1.7 1.7 0 0 0-1.7.4Z" /></svg>
+                        Pengaturan
+                    </a>
+                }
+            </nav>
+        </aside>
+        <main class="main-content" id="main-content">
+            @if (TempData["Success"] is string success)
+            {
+                <div class="flash flash-success" role="status">@success</div>
+            }
+            @if (TempData["Error"] is string error)
+            {
+                <div class="flash flash-error" role="alert">@error</div>
+            }
+            @RenderBody()
+        </main>
+    </div>
+}
+else
+{
+    <main class="auth-main">@RenderBody()</main>
+}
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

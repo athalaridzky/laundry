@@ -1,0 +1,22 @@
+@model ReceiptViewModel
+@{
+    Layout = null;
+    DateTime receivedLocal = BusinessTime.ToLocal(Model.Order.ReceivedAtUtc);
+}
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>Struk @Model.Order.OrderNumber</title><link rel="stylesheet" href="~/css/receipt.css" asp-append-version="true" /></head>
+<body class="receipt-page width-@Model.Settings.PaperWidthMm">
+<div class="screen-actions"><a href="/Orders/@Model.Order.Id">Kembali</a><button type="button" onclick="window.print()">Cetak</button></div>
+<main class="receipt">
+    <header><h1>@Model.Settings.BusinessName</h1><p>@Model.Settings.Address</p>@if (!string.IsNullOrWhiteSpace(Model.Settings.PhoneNumber)) { <p>@Model.Settings.PhoneNumber</p> }</header>
+    @if (Model.IsCopy) { <div class="copy-mark">SALINAN</div> }
+    <dl class="receipt-meta"><div><dt>No. nota</dt><dd>@Model.Order.OrderNumber</dd></div><div><dt>Tanggal</dt><dd>@receivedLocal.ToString("dd/MM/yyyy HH:mm")</dd></div><div><dt>Kasir</dt><dd>@Model.Order.CreatedBy</dd></div><div><dt>Pelanggan</dt><dd>@Model.Order.Customer.Name</dd></div></dl>
+    <div class="receipt-rule"></div>
+    <section class="receipt-items">@foreach (OrderItemDto item in Model.Order.Items) { <article><strong>@item.ServiceName</strong><div><span>@(item.Category == ServiceCategory.PerKilo ? $"{item.Quantity:0.#} kg" : $"{item.Quantity:0} pcs") x @UiFormat.Currency(item.UnitPrice)</span><span>@UiFormat.Currency(item.Subtotal)</span></div></article> }</section>
+    <div class="receipt-rule"></div>
+    <dl class="receipt-totals"><div class="grand-total"><dt>TOTAL</dt><dd>@UiFormat.Currency(Model.Order.TotalAmount)</dd></div><div><dt>Dibayar</dt><dd>@UiFormat.Currency(Model.Order.PaidAmount)</dd></div>@if (Model.ChangeAmount > 0) { <div><dt>Kembalian</dt><dd>@UiFormat.Currency(Model.ChangeAmount)</dd></div> } else { <div><dt>Sisa</dt><dd>@UiFormat.Currency(Model.Order.OutstandingAmount)</dd></div> }<div><dt>Status</dt><dd>@UiFormat.PaymentStatusLabel(Model.Order.PaymentStatus)</dd></div></dl>
+    @if (Model.Order.EstimatedDoneAtUtc.HasValue) { <div class="receipt-estimate"><span>Estimasi selesai</span><strong>@BusinessTime.ToLocal(Model.Order.EstimatedDoneAtUtc.Value).ToString("dd MMM yyyy, HH:mm")</strong></div> }
+    <footer><p>@Model.Settings.ReceiptFooter</p><p>Terima kasih.</p></footer>
+</main>
+@if ((bool?)ViewData["AutoPrint"] == true) { <script>window.addEventListener('load', () => window.print());</script> }
+</body></html>

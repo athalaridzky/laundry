@@ -1,0 +1,38 @@
+@model ReportPageViewModel
+@{
+    ViewData["Title"] = "Rekap";
+}
+<header class="page-header"><div><p class="eyebrow">Khusus Owner</p><h1>Rekap pendapatan</h1><p>Pendapatan dihitung dari pembayaran yang benar-benar diterima.</p></div><div class="header-actions"><a class="btn btn-secondary" asp-action="Export" asp-route-from="@Model.From.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" asp-route-to="@Model.To.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" asp-route-format="xlsx">Ekspor Excel</a><a class="btn btn-secondary" asp-action="Export" asp-route-from="@Model.From.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" asp-route-to="@Model.To.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" asp-route-format="pdf">Ekspor PDF</a></div></header>
+<section class="filter-bar"><form method="get" class="filter-grid report-filter"><div class="field"><label for="from">Dari</label><input id="from" name="from" type="date" value="@Model.From.ToString("yyyy-MM-dd")" /></div><div class="field"><label for="to">Sampai</label><input id="to" name="to" type="date" value="@Model.To.ToString("yyyy-MM-dd")" /></div><button class="btn btn-primary filter-submit" type="submit">Tampilkan</button></form></section>
+<section class="metrics-strip report-metrics"><div><span>Total pendapatan</span><strong>@UiFormat.Currency(Model.Summary.TotalRevenue)</strong></div><div><span>Transaksi masuk</span><strong>@Model.Summary.TransactionCount</strong></div><div><span>Berat diterima</span><strong>@UiFormat.Weight(Model.Summary.TotalWeightKg)</strong></div></section>
+<section class="content-section"><div class="section-heading"><div><h2>Menurut metode pembayaran</h2><p>Periode @Model.From.ToString("dd MMM yyyy")–@Model.To.ToString("dd MMM yyyy").</p></div></div>@if (Model.Summary.ByMethod.Count == 0) { <div class="empty-state"><h3>Belum ada pembayaran</h3><p>Pilih periode lain atau catat pembayaran transaksi.</p></div> } else { <div class="method-breakdown">@foreach (PaymentMethod method in Enum.GetValues<PaymentMethod>()) { PaymentMethodTotalDto? row = Model.Summary.ByMethod.FirstOrDefault(item => item.Method == method); <div><span>@UiFormat.PaymentMethodLabel(method)</span><strong>@UiFormat.Currency(row?.Amount ?? 0)</strong><small>@(row?.Count ?? 0) pembayaran</small></div> }</div> }</section>
+
+<section class="content-section">
+    <div class="section-heading">
+        <div><h2>Rincian pembayaran</h2><p>@Model.Rows.Count pembayaran pada periode terpilih.</p></div>
+    </div>
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty-state"><h3>Belum ada rincian pembayaran</h3><p>Pembayaran yang masuk pada periode ini akan tampil di sini.</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr><th>Tanggal</th><th>No. nota</th><th>Pelanggan</th><th>Metode</th><th class="text-end">Jumlah</th></tr></thead>
+                <tbody>
+                @foreach (ReportExportRowDto row in Model.Rows)
+                {
+                    <tr>
+                        <td>@BusinessTime.ToLocal(row.PaidAtUtc).ToString("dd MMM yyyy, HH.mm")</td>
+                        <td><span class="order-number">@row.OrderNumber</span></td>
+                        <td>@row.CustomerName</td>
+                        <td>@UiFormat.PaymentMethodLabel(row.Method)</td>
+                        <td class="money text-end">@UiFormat.Currency(row.Amount)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

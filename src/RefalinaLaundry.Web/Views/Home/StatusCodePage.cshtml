@@ -1,0 +1,5 @@
+@{
+    int code = (int)(ViewData["StatusCode"] ?? 404);
+    ViewData["Title"] = code == 404 ? "Halaman tidak ditemukan" : "Permintaan tidak dapat diproses";
+}
+<div class="message-page"><p class="error-code">@code</p><h1>@ViewData["Title"]</h1><p>Periksa kembali alamat atau kembali ke halaman utama.</p><a class="btn btn-primary" asp-controller="Home" asp-action="Index">Kembali ke ringkasan</a></div>

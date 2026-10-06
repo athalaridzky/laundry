@@ -1,0 +1,31 @@
+@model CustomerPageViewModel
+@{
+    ViewData["Title"] = "Pelanggan";
+}
+<header class="page-header"><div><p class="eyebrow">Data pelanggan</p><h1>Pelanggan</h1><p>Nomor HP dinormalisasi dan digunakan untuk pencarian cepat.</p></div></header>
+<div class="split-page">
+    <section class="content-section">
+        <div class="section-heading"><div><h2>Daftar pelanggan</h2><p>@Model.Customers.Count data ditampilkan.</p></div><form method="get" class="inline-search"><label class="visually-hidden" for="search">Cari pelanggan</label><input id="search" name="search" value="@Model.Search" placeholder="Cari nama atau nomor HP" /><button class="btn btn-secondary" type="submit">Cari</button></form></div>
+        @if (Model.Customers.Count == 0) { <div class="empty-state"><h3>Belum ada pelanggan</h3><p>Tambahkan pelanggan melalui formulir di samping.</p></div> }
+        else
+        {
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>Nama</th><th>Nomor HP</th><th>Alamat</th><th>Transaksi</th><th>Aksi</th></tr></thead><tbody>
+            @foreach (CustomerDto customer in Model.Customers)
+            {
+                <tr><td><strong>@customer.Name</strong>@if (!string.IsNullOrWhiteSpace(customer.Notes)) { <small>@customer.Notes</small> }</td><td>@(customer.PhoneNumber ?? "—")</td><td>@(customer.Address ?? "—")</td><td>@customer.OrderCount</td><td><details class="row-menu"><summary>Ubah</summary><form asp-action="Update" asp-route-id="@customer.Id" method="post" class="popover-form"><label>Nama<input name="Name" value="@customer.Name" required maxlength="150" /></label><label>Nomor HP<input name="PhoneNumber" value="@customer.PhoneNumber" maxlength="20" /></label><label>Alamat<textarea name="Address" maxlength="300">@customer.Address</textarea></label><label>Catatan<textarea name="Notes" maxlength="500">@customer.Notes</textarea></label><div><button class="btn btn-primary btn-sm" type="submit">Simpan</button><button class="btn btn-danger btn-sm" type="submit" formaction="/Customers/@customer.Id/Delete" data-confirm="Nonaktifkan pelanggan ini?">Nonaktifkan</button></div></form></details></td></tr>
+            }
+            </tbody></table></div>
+        }
+    </section>
+    <aside class="form-surface sticky-side">
+        <p class="eyebrow">Data baru</p><h2>Tambah pelanggan</h2>
+        <form asp-action="Create" method="post" class="stack-form">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <div class="field"><label for="Name">Nama</label><input id="Name" name="Name" value="@Model.Form.Name" required maxlength="150" autofocus /></div>
+            <div class="field"><label for="PhoneNumber">Nomor HP</label><input id="PhoneNumber" name="PhoneNumber" value="@Model.Form.PhoneNumber" maxlength="20" inputmode="tel" placeholder="08xxxxxxxxxx" /></div>
+            <div class="field"><label for="Address">Alamat</label><textarea id="Address" name="Address" maxlength="300" rows="3">@Model.Form.Address</textarea></div>
+            <div class="field"><label for="Notes">Catatan</label><textarea id="Notes" name="Notes" maxlength="500" rows="2">@Model.Form.Notes</textarea></div>
+            <button class="btn btn-primary" type="submit">Simpan pelanggan</button>
+        </form>
+    </aside>
+</div>

@@ -1,0 +1,47 @@
+@model OrderDetailPageViewModel
+@{
+    ViewData["Title"] = Model.Order.OrderNumber;
+    OrderStatus? nextStatus = Model.Order.Status switch { OrderStatus.Received => OrderStatus.InProcess, OrderStatus.InProcess => OrderStatus.Done, OrderStatus.Done => OrderStatus.PickedUp, _ => null };
+}
+<header class="page-header">
+    <div><p class="eyebrow">Detail pesanan</p><h1 class="order-title">@Model.Order.OrderNumber</h1><p>@Model.Order.Customer.Name · @BusinessTime.ToLocal(Model.Order.ReceivedAtUtc).ToString("dd MMM yyyy, HH.mm")</p></div>
+    <div class="header-actions"><a class="btn btn-secondary" asp-action="Receipt" asp-route-id="@Model.Order.Id">Lihat struk</a><form asp-action="ReprintReceipt" asp-route-id="@Model.Order.Id" method="post"><button class="btn btn-secondary" type="submit">Cetak salinan</button></form>@if (nextStatus.HasValue && !(nextStatus == OrderStatus.PickedUp && Model.Order.PaymentStatus != PaymentStatus.Paid)) { <form asp-action="Status" asp-route-id="@Model.Order.Id" method="post"><input type="hidden" name="status" value="@nextStatus" /><button class="btn btn-primary" type="submit">Tandai @UiFormat.OrderStatusLabel(nextStatus.Value)</button></form> }</div>
+</header>
+<div class="detail-grid">
+    <div class="detail-main">
+        <section class="content-section">
+            <div class="section-heading"><div><h2>Rincian layanan</h2><p>@Model.Order.Items.Count layanan dalam transaksi.</p></div><div class="status-stack"><span class="status @UiFormat.StatusCss(Model.Order.Status)">@UiFormat.OrderStatusLabel(Model.Order.Status)</span><span class="status @UiFormat.PaymentCss(Model.Order.PaymentStatus)">@UiFormat.PaymentStatusLabel(Model.Order.PaymentStatus)</span></div></div>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>Layanan</th><th>Qty</th><th class="text-end">Harga</th><th class="text-end">Subtotal</th></tr></thead><tbody>@foreach (OrderItemDto item in Model.Order.Items) { <tr><td>@item.ServiceName</td><td>@(item.Category == ServiceCategory.PerKilo ? UiFormat.Weight(item.Quantity) : $"{item.Quantity:0} pcs")</td><td class="money text-end">@UiFormat.Currency(item.UnitPrice)</td><td class="money text-end">@UiFormat.Currency(item.Subtotal)</td></tr> }</tbody><tfoot><tr><th colspan="3">Total</th><th class="money text-end">@UiFormat.Currency(Model.Order.TotalAmount)</th></tr></tfoot></table></div>
+            @if (!string.IsNullOrWhiteSpace(Model.Order.Notes)) { <div class="note-box"><strong>Catatan</strong><p>@Model.Order.Notes</p></div> }
+        </section>
+        <section class="content-section">
+            <div class="section-heading"><div><h2>Riwayat status</h2><p>Jejak perubahan pesanan.</p></div></div>
+            <ol class="timeline">@foreach (OrderStatusHistoryDto history in Model.Order.StatusHistories) { <li><span class="timeline-dot"></span><div><strong>@UiFormat.OrderStatusLabel(history.ToStatus)</strong><p>@BusinessTime.ToLocal(history.ChangedAtUtc).ToString("dd MMM yyyy, HH.mm") · @history.ChangedBy</p>@if (!string.IsNullOrWhiteSpace(history.Note)) { <small>@history.Note</small> }</div></li> }</ol>
+        </section>
+    </div>
+    <aside class="detail-side">
+        <section class="summary-panel">
+            <h2>Pembayaran</h2>
+            <dl class="amount-list"><div><dt>Total</dt><dd>@UiFormat.Currency(Model.Order.TotalAmount)</dd></div><div><dt>Sudah dibayar</dt><dd>@UiFormat.Currency(Model.Order.PaidAmount)</dd></div><div class="amount-due"><dt>Sisa</dt><dd>@UiFormat.Currency(Model.Order.OutstandingAmount)</dd></div></dl>
+            @if (Model.Order.OutstandingAmount > 0 && Model.Order.Status != OrderStatus.Cancelled)
+            {
+                <form asp-action="Payment" asp-route-id="@Model.Order.Id" method="post" class="stack-form compact-form" data-payment-form>
+                    <div class="field"><label asp-for="Payment.Amount">Jumlah</label><div class="input-prefix"><span>Rp</span><input asp-for="Payment.Amount" inputmode="decimal" /></div></div>
+                    <div class="field"><label asp-for="Payment.Method">Metode</label><select asp-for="Payment.Method" data-detail-payment-method><option value="Cash">Tunai</option><option value="Transfer">Transfer</option><option value="Qris">QRIS</option></select></div>
+                    <div class="field" data-detail-cash><label asp-for="Payment.CashTendered">Uang diterima</label><div class="input-prefix"><span>Rp</span><input asp-for="Payment.CashTendered" inputmode="decimal" /></div></div>
+                    <div class="field" data-detail-reference hidden><label asp-for="Payment.Reference">Referensi</label><input asp-for="Payment.Reference" /></div>
+                    <button class="btn btn-primary w-100" type="submit">Catat pembayaran</button>
+                </form>
+            }
+            @if (Model.Order.Payments.Count > 0)
+            {
+                <ul class="payment-history">@foreach (PaymentDto payment in Model.Order.Payments) { <li><div><strong>@UiFormat.Currency(payment.Amount)</strong><span>@UiFormat.PaymentMethodLabel(payment.Method)</span></div><small>@BusinessTime.ToLocal(payment.PaidAtUtc).ToString("dd MMM, HH.mm") · @payment.ReceivedBy</small></li> }</ul>
+            }
+        </section>
+        <section class="info-panel"><h2>Pelanggan</h2><strong>@Model.Order.Customer.Name</strong><p>@(Model.Order.Customer.PhoneNumber ?? "Tanpa nomor HP")</p><p>@Model.Order.Customer.Address</p><hr /><dl><div><dt>Estimasi selesai</dt><dd>@(Model.Order.EstimatedDoneAtUtc.HasValue ? BusinessTime.ToLocal(Model.Order.EstimatedDoneAtUtc.Value).ToString("dd MMM yyyy, HH.mm") : "Belum ditentukan")</dd></div><div><dt>Kasir</dt><dd>@Model.Order.CreatedBy</dd></div></dl></section>
+        @if (Model.Order.Status is OrderStatus.Received or OrderStatus.InProcess)
+        {
+            <details class="danger-zone"><summary>Batalkan pesanan</summary><form asp-action="Cancel" asp-route-id="@Model.Order.Id" method="post" class="stack-form"><div class="field"><label for="reason">Alasan pembatalan</label><textarea id="reason" name="reason" required maxlength="300" rows="3"></textarea></div><button class="btn btn-danger" type="submit" data-confirm="Batalkan transaksi ini? Tindakan akan dicatat dalam audit.">Batalkan transaksi</button></form></details>
+        }
+    </aside>
+</div>

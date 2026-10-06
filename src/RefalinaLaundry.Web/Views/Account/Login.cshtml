@@ -1,0 +1,18 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Masuk";
+}
+<div class="login-panel">
+    <div class="login-brand"><span class="brand-mark">RL</span><div><strong>Refalina Laundry</strong><small>Kasir & manajemen pesanan</small></div></div>
+    <div class="login-copy"><p class="eyebrow">Akses staf</p><h1>Masuk ke aplikasi</h1><p>Gunakan akun Owner atau Kasir yang sudah terdaftar.</p></div>
+    <form method="post" asp-action="Login" class="stack-form">
+        <input asp-for="ReturnUrl" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+        <div class="field"><label asp-for="UserName">Username</label><input asp-for="UserName" autocomplete="username" autofocus /><span asp-validation-for="UserName"></span></div>
+        <div class="field"><label asp-for="Password">Password</label><input asp-for="Password" autocomplete="current-password" /><span asp-validation-for="Password"></span></div>
+        <label class="check-row"><input asp-for="RememberMe" /> <span>Ingat saya di perangkat ini</span></label>
+        <button class="btn btn-primary btn-lg w-100" type="submit">Masuk</button>
+    </form>
+    <p class="login-help">Jika akun terkunci, tunggu 15 menit atau hubungi Owner.</p>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

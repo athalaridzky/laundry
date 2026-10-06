@@ -1,0 +1,51 @@
+@model OrderIndexViewModel
+@{
+    ViewData["Title"] = "Pesanan";
+}
+<header class="page-header">
+    <div><p class="eyebrow">Riwayat & operasional</p><h1>Pesanan</h1><p>Cari nota, pelanggan, status, atau pembayaran.</p></div>
+    <a class="btn btn-primary" asp-action="Create">Transaksi baru</a>
+</header>
+<section class="filter-bar">
+    <form method="get" class="filter-grid" data-auto-filter>
+        <div class="field field-grow"><label for="search">Cari</label><input id="search" name="search" value="@Model.Search" placeholder="No. nota, nama, atau nomor HP" /></div>
+        <div class="field"><label for="from">Dari</label><input id="from" type="date" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" /></div>
+        <div class="field"><label for="to">Sampai</label><input id="to" type="date" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" /></div>
+        <div class="field"><label for="status">Status</label><select id="status" name="status"><option value="">Semua</option>@foreach (OrderStatus value in Enum.GetValues<OrderStatus>()) { <option value="@value" selected="@(Model.Status == value ? "selected" : null)">@UiFormat.OrderStatusLabel(value)</option> }</select></div>
+        <div class="field"><label for="paymentStatus">Pembayaran</label><select id="paymentStatus" name="paymentStatus"><option value="">Semua</option>@foreach (PaymentStatus value in Enum.GetValues<PaymentStatus>()) { <option value="@value" selected="@(Model.PaymentStatus == value ? "selected" : null)">@UiFormat.PaymentStatusLabel(value)</option> }</select></div>
+        <button class="btn btn-secondary filter-submit" type="submit">Terapkan</button>
+    </form>
+</section>
+<section class="content-section flush">
+@if (Model.Orders.Items.Count == 0)
+{
+    <div class="empty-state"><h2>Pesanan tidak ditemukan</h2><p>Ubah kata kunci atau filter, atau buat transaksi baru.</p></div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="data-table orders-table">
+            <thead><tr><th>No. nota</th><th>Pelanggan</th><th>Estimasi</th><th>Status</th><th>Pembayaran</th><th class="text-end">Sisa</th><th>Aksi</th></tr></thead>
+            <tbody>
+            @foreach (OrderListItemDto order in Model.Orders.Items)
+            {
+                OrderStatus? nextStatus = order.Status switch { OrderStatus.Received => OrderStatus.InProcess, OrderStatus.InProcess => OrderStatus.Done, OrderStatus.Done => OrderStatus.PickedUp, _ => null };
+                <tr class="@(order.IsOverdue ? "row-overdue" : null)">
+                    <td><a class="order-number" asp-action="Details" asp-route-id="@order.Id">@order.OrderNumber</a>@if (order.IsOverdue) { <small class="overdue-label">Terlambat</small> }</td>
+                    <td><strong>@order.CustomerName</strong><small>@order.CustomerPhone</small></td>
+                    <td>@(order.EstimatedDoneAtUtc.HasValue ? BusinessTime.ToLocal(order.EstimatedDoneAtUtc.Value).ToString("dd MMM, HH.mm") : "—")</td>
+                    <td><span class="status @UiFormat.StatusCss(order.Status)">@UiFormat.OrderStatusLabel(order.Status)</span></td>
+                    <td><span class="status @UiFormat.PaymentCss(order.PaymentStatus)">@UiFormat.PaymentStatusLabel(order.PaymentStatus)</span></td>
+                    <td class="money text-end">@UiFormat.Currency(order.TotalAmount - order.PaidAmount)</td>
+                    <td class="table-actions"><a class="btn btn-sm btn-secondary" asp-action="Details" asp-route-id="@order.Id">Detail</a>@if (nextStatus.HasValue && !(nextStatus == OrderStatus.PickedUp && order.PaymentStatus != PaymentStatus.Paid)) { <form asp-action="Status" asp-route-id="@order.Id" method="post"><input type="hidden" name="status" value="@nextStatus" /><button class="btn btn-sm btn-quiet" type="submit">@UiFormat.OrderStatusLabel(nextStatus.Value)</button></form> }</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Orders.TotalPages > 1)
+    {
+        <nav class="pagination-nav" aria-label="Halaman pesanan"><span>Halaman @Model.Orders.Page dari @Model.Orders.TotalPages</span><div>@if (Model.Orders.Page > 1) { <a class="btn btn-sm btn-secondary" asp-route-page="@(Model.Orders.Page - 1)" asp-route-search="@Model.Search" asp-route-from="@Model.From" asp-route-to="@Model.To" asp-route-status="@Model.Status" asp-route-paymentStatus="@Model.PaymentStatus">Sebelumnya</a> }@if (Model.Orders.Page < Model.Orders.TotalPages) { <a class="btn btn-sm btn-secondary" asp-route-page="@(Model.Orders.Page + 1)" asp-route-search="@Model.Search" asp-route-from="@Model.From" asp-route-to="@Model.To" asp-route-status="@Model.Status" asp-route-paymentStatus="@Model.PaymentStatus">Berikutnya</a> }</div></nav>
+    }
+}
+</section>
